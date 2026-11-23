@@ -8,6 +8,9 @@
   Type the real symbols for times and divide:  ×  ÷  −
 
   Every round needs exactly 4 steps, one per runner.
+
+  "examples" are optional. They come before Round 1, show the problem right
+  away, and are not timed.
 */
 window.RELAY_LESSONS = window.RELAY_LESSONS || [];
 window.RELAY_LESSONS.push({
@@ -15,6 +18,30 @@ window.RELAY_LESSONS.push({
   grade: 6,
   lesson: "3-5",
   title: "Evaluate Algebraic Expressions",
+  examples: [
+    {
+      expression: "3x + y^2 − 5",
+      values: ["x = 4", "y = 6"],
+      steps: [
+        { job: "Substitute", work: "3(4) + 6^2 − 5" },
+        { job: "Exponent", work: "3(4) + 36 − 5" },
+        { job: "Multiply", work: "12 + 36 − 5" },
+        { job: "Add and subtract", work: "43" }
+      ],
+      answer: "43"
+    },
+    {
+      expression: "r^2 − 10s ÷ 5",
+      values: ["r = 9", "s = 4"],
+      steps: [
+        { job: "Substitute", work: "9^2 − 10(4) ÷ 5" },
+        { job: "Exponent", work: "81 − 10(4) ÷ 5" },
+        { job: "Multiply and divide", work: "81 − 8" },
+        { job: "Subtract", work: "73" }
+      ],
+      answer: "73"
+    }
+  ],
   rounds: [
     {
       level: "Whole numbers",

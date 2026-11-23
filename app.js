@@ -17,6 +17,7 @@
 
   // ---------- state ----------
   var lesson = null;
+  var items = [];          // examples first, then the timed rounds
   var round = 0;
   var revealed = 0;        // reveal taps so far: each step takes two (the work, then its name)
   var phase = "ready";     // ready | running | stopped
@@ -42,11 +43,15 @@
 
   // ---------- rendering ----------
   function renderRound() {
-    var r = lesson.rounds[round];
+    var r = items[round];
     $("lessonName").textContent = "Grade " + lesson.grade + "  ·  Lesson " + lesson.lesson + "  ·  " + lesson.title;
-    $("levelTag").textContent = r.level || "";
-    $("levelTag").hidden = !r.level;
-    $("roundLabel").textContent = "Round " + (round + 1) + " of " + lesson.rounds.length;
+    var tag = r.example ? "Example" : r.level || "";
+    $("levelTag").textContent = tag;
+    $("levelTag").hidden = !tag;
+    $("app").classList.toggle("is-example", !!r.example);
+    $("roundLabel").textContent = r.example
+      ? "Example " + (r.num + 1) + " of " + (lesson.examples || []).length
+      : "Round " + (r.num + 1) + " of " + lesson.rounds.length;
 
     $("story").textContent = r.story || "";
     $("problemBody").classList.toggle("has-story", !!r.story);
@@ -67,7 +72,7 @@
   }
 
   function renderState() {
-    var r = lesson.rounds[round];
+    var r = items[round];
     var showProblem = phase !== "ready";
     $("getSet").hidden = showProblem;
     $("problemBody").hidden = !showProblem;
@@ -82,8 +87,10 @@
 
     var main = $("mainBtn");
     main.classList.toggle("stop", phase === "running");
-    main.textContent = phase === "ready" ? "Start" : phase === "running" ? "Stop" : round === lesson.rounds.length - 1 ? "Last round done" : "Next round";
-    main.disabled = phase === "stopped" && round === lesson.rounds.length - 1;
+    var last = round === items.length - 1;
+    main.textContent = phase === "ready" ? "Start" : phase === "running" ? "Stop" :
+      last ? "Last round done" : !r.example ? "Next round" : items[round + 1].example ? "Next example" : "Go to Round 1";
+    main.disabled = phase !== "ready" && phase !== "running" && last;
 
     var rb = $("revealBtn");
     rb.disabled = phase === "ready" || revealed >= total;
@@ -91,7 +98,7 @@
       (revealed % 2 === 0 ? "Show step " : "Name step ") + (Math.floor(revealed / 2) + 1);
 
     $("prevBtn").disabled = round === 0;
-    $("nextBtn").disabled = round === lesson.rounds.length - 1;
+    $("nextBtn").disabled = round === items.length - 1;
     $("clock").classList.toggle("running", phase === "running");
     $("clock").textContent = fmt(elapsed);
   }
@@ -101,9 +108,10 @@
     Object.keys(times).forEach(function (k) {
       if (best === null || times[k] < times[best]) best = k;
     });
+    var curNum = items[round].example ? -1 : items[round].num;
     $("times").innerHTML = lesson.rounds.map(function (_, i) {
       var has = times[i] != null;
-      var cls = (i === round ? "current " : "") + (String(i) === best ? "best" : "");
+      var cls = (i === curNum ? "current " : "") + (String(i) === best ? "best" : "");
       return '<li class="' + cls + '"><span>Round ' + (i + 1) + "</span>" +
         '<span class="t' + (has ? "" : " none") + '">' + (has ? fmt(times[i]) + (String(i) === best ? " ★" : "") : "–") + "</span></li>";
     }).join("");
@@ -130,17 +138,17 @@
     elapsed = performance.now() - startedAt;
     stopTicker();
     phase = "stopped";
-    times[round] = elapsed;
+    times[items[round].num] = elapsed;
     saveTimes();
     renderState();
     renderTimes();
   }
 
   function goTo(i) {
-    if (i < 0 || i >= lesson.rounds.length) return;
+    if (i < 0 || i >= items.length) return;
     stopTicker();
     round = i;
-    phase = "ready";
+    phase = items[i].example ? "example" : "ready";
     revealed = 0;
     elapsed = 0;
     renderRound();
@@ -154,12 +162,12 @@
 
   function reveal() {
     if (phase === "ready") return;
-    if (revealed < lesson.rounds[round].steps.length * 2) { revealed++; renderState(); }
+    if (revealed < items[round].steps.length * 2) { revealed++; renderState(); }
   }
 
   function redo() {
     stopTicker();
-    phase = "ready";
+    phase = items[round].example ? "example" : "ready";
     revealed = 0;
     elapsed = 0;
     renderState();
@@ -168,6 +176,8 @@
   // ---------- lesson picker ----------
   function openLesson(l) {
     lesson = l;
+    items = (l.examples || []).map(function (r, i) { return Object.assign({}, r, { example: true, num: i }); })
+      .concat(l.rounds.map(function (r, i) { return Object.assign({}, r, { num: i }); }));
     loadTimes();
     $("picker").hidden = true;
     $("app").hidden = false;

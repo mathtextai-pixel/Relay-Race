@@ -2,6 +2,10 @@
 
 A projector-friendly relay race board for math class. Students line up in teams of 4. A problem goes up, each runner does one step, and the class is timed each round. No scores, just the clock.
 
+## Examples
+
+A lesson can open with example problems before Round 1. They show the problem right away and are not timed: tap **Show step** and **Name step** to walk through them with the class.
+
 ## Running a round
 
 1. Press **Start** (or the space bar). The problem appears and the stopwatch starts.

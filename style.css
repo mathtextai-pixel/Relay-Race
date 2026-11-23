@@ -237,3 +237,7 @@ button.primary.stop { background: var(--stop); border-color: var(--stop); color:
 #lessonList { display: grid; gap: 16px; margin-top: 32px; }
 #lessonList button { font-size: 28px; padding: 24px; text-align: left; }
 #lessonList small { display: block; color: var(--muted); font-weight: 400; font-size: 18px; margin-top: 4px; }
+
+/* ---------- examples (shown before the timed rounds, no clock) ---------- */
+.is-example #clock { visibility: hidden; }
+.is-example .tag { background: var(--runner1); }
