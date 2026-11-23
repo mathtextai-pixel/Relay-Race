@@ -5,9 +5,9 @@ A projector-friendly relay race board for math class. Students line up in teams 
 ## Running a round
 
 1. Press **Start** (or the space bar). The problem appears and the stopwatch starts.
-2. Each of the four cards names one runner's job.
+2. The four runner cards stay blank during the race. Students decide what the next step is.
 3. Press **Stop** when the class is done. The time is saved in the Round times list; the fastest round gets a star.
-4. Press **Show step** to reveal the worked steps one at a time, then the answer.
+4. Press **Show step** to reveal a runner's line of work, then **Name step** to show what that step is called, so the class can say it first. The answer appears after the last step.
 5. Press **Next round**.
 
 **Redo round** hides the problem and resets the clock. **Clear** wipes the saved times (use it between class periods).

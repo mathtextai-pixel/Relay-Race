@@ -18,7 +18,7 @@
   // ---------- state ----------
   var lesson = null;
   var round = 0;
-  var revealed = 0;        // how many runner steps are showing
+  var revealed = 0;        // reveal taps so far: each step takes two (the work, then its name)
   var phase = "ready";     // ready | running | stopped
   var startedAt = 0;
   var elapsed = 0;
@@ -71,11 +71,14 @@
     var showProblem = phase !== "ready";
     $("getSet").hidden = showProblem;
     $("problemBody").hidden = !showProblem;
-    $("runners").classList.toggle("jobs-hidden", !showProblem);
 
     var cards = $("runners").children;
-    for (var i = 0; i < cards.length; i++) cards[i].classList.toggle("shown", i < revealed);
-    $("answerRow").hidden = revealed < r.steps.length;
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].classList.toggle("shown", revealed > 2 * i);
+      cards[i].classList.toggle("named", revealed > 2 * i + 1);
+    }
+    var total = r.steps.length * 2;
+    $("answerRow").hidden = revealed < total;
 
     var main = $("mainBtn");
     main.classList.toggle("stop", phase === "running");
@@ -83,8 +86,9 @@
     main.disabled = phase === "stopped" && round === lesson.rounds.length - 1;
 
     var rb = $("revealBtn");
-    rb.disabled = phase === "ready" || revealed >= r.steps.length;
-    rb.textContent = revealed >= r.steps.length ? "All steps shown" : "Show step " + (revealed + 1);
+    rb.disabled = phase === "ready" || revealed >= total;
+    rb.textContent = revealed >= total ? "All steps shown" :
+      (revealed % 2 === 0 ? "Show step " : "Name step ") + (Math.floor(revealed / 2) + 1);
 
     $("prevBtn").disabled = round === 0;
     $("nextBtn").disabled = round === lesson.rounds.length - 1;
@@ -150,7 +154,7 @@
 
   function reveal() {
     if (phase === "ready") return;
-    if (revealed < lesson.rounds[round].steps.length) { revealed++; renderState(); }
+    if (revealed < lesson.rounds[round].steps.length * 2) { revealed++; renderState(); }
   }
 
   function redo() {
