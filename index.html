@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay Race</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Lesson picker (only shown when there is more than one lesson) -->
+<main id="picker" hidden>
+  <h1>Relay Race</h1>
+  <p class="picker-sub">Choose a lesson</p>
+  <div id="lessonList"></div>
+</main>
+
+<div id="app" hidden>
+  <header>
+    <button id="homeBtn" class="ghost" hidden>Lessons</button>
+    <div class="lesson-name" id="lessonName"></div>
+    <div class="round-info">
+      <span id="levelTag" class="tag"></span>
+      <span id="roundLabel"></span>
+    </div>
+    <button id="fullBtn" class="ghost">Full screen</button>
+  </header>
+
+  <section id="stage">
+    <div id="problem">
+      <div id="getSet">
+        <div class="getset-big">Runners ready?</div>
+        <div class="getset-small">The problem appears when the clock starts.</div>
+      </div>
+      <div id="problemBody" hidden>
+        <p id="story"></p>
+        <div class="evaluate-label">Evaluate</div>
+        <div id="expression" class="math"></div>
+        <div id="values"></div>
+      </div>
+    </div>
+
+    <div id="runners"></div>
+
+    <div id="answerRow" hidden>
+      <span class="answer-label">Answer</span>
+      <span id="answer" class="math"></span>
+    </div>
+  </section>
+
+  <aside id="side">
+    <div id="clock" aria-live="off">0:00.0</div>
+    <button id="mainBtn" class="primary">Start</button>
+    <div class="side-row">
+      <button id="revealBtn">Show step 1</button>
+      <button id="resetBtn">Redo round</button>
+    </div>
+    <div class="side-row">
+      <button id="prevBtn">Back</button>
+      <button id="nextBtn">Next round</button>
+    </div>
+
+    <div class="times-head">
+      <h2>Round times</h2>
+      <button id="clearBtn" class="ghost small">Clear</button>
+    </div>
+    <ol id="times"></ol>
+  </aside>
+</div>
+
+<script src="lessons/g6-3-5.js"></script>
+<!-- Add more lessons here, one line each -->
+<script src="app.js"></script>
+</body>
+</html>

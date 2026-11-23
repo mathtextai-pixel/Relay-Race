@@ -1,0 +1,221 @@
+(function () {
+  "use strict";
+
+  var lessons = window.RELAY_LESSONS || [];
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- math shorthand -> HTML ----------
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function math(s) {
+    return esc(s)
+      .replace(/[a-zA-Z]/g, "<i>$&</i>")
+      .replace(/\{([^{}\/]+)\/([^{}\/]+)\}/g, '<span class="frac"><span>$1</span><span>$2</span></span>')
+      .replace(/\^(\d+)/g, "<sup>$1</sup>");
+  }
+
+  // ---------- state ----------
+  var lesson = null;
+  var round = 0;
+  var revealed = 0;        // how many runner steps are showing
+  var phase = "ready";     // ready | running | stopped
+  var startedAt = 0;
+  var elapsed = 0;
+  var ticker = null;
+  var times = {};          // round index -> ms
+
+  function storeKey() { return "relay-times-" + lesson.id; }
+  function loadTimes() {
+    try { times = JSON.parse(localStorage.getItem(storeKey())) || {}; } catch (e) { times = {}; }
+  }
+  function saveTimes() {
+    try { localStorage.setItem(storeKey(), JSON.stringify(times)); } catch (e) { /* ignore */ }
+  }
+
+  function fmt(ms) {
+    var tenths = Math.floor(ms / 100);
+    var m = Math.floor(tenths / 600);
+    var s = Math.floor((tenths % 600) / 10);
+    return m + ":" + (s < 10 ? "0" : "") + s + "." + (tenths % 10);
+  }
+
+  // ---------- rendering ----------
+  function renderRound() {
+    var r = lesson.rounds[round];
+    $("lessonName").textContent = "Grade " + lesson.grade + "  ·  Lesson " + lesson.lesson + "  ·  " + lesson.title;
+    $("levelTag").textContent = r.level || "";
+    $("levelTag").hidden = !r.level;
+    $("roundLabel").textContent = "Round " + (round + 1) + " of " + lesson.rounds.length;
+
+    $("story").textContent = r.story || "";
+    $("problemBody").classList.toggle("has-story", !!r.story);
+    $("expression").innerHTML = math(r.expression);
+    $("values").innerHTML = (r.values || []).map(function (v) {
+      return '<span class="value-chip">' + math(v) + "</span>";
+    }).join("");
+
+    $("runners").innerHTML = r.steps.map(function (st, i) {
+      return '<div class="runner"><div class="runner-num">Runner ' + (i + 1) + "</div>" +
+        '<div class="runner-job">' + esc(st.job) + "</div>" +
+        '<div class="work">' + math(st.work) + "</div></div>";
+    }).join("");
+    $("answer").innerHTML = math(r.answer);
+
+    renderState();
+    renderTimes();
+  }
+
+  function renderState() {
+    var r = lesson.rounds[round];
+    var showProblem = phase !== "ready";
+    $("getSet").hidden = showProblem;
+    $("problemBody").hidden = !showProblem;
+    $("runners").classList.toggle("jobs-hidden", !showProblem);
+
+    var cards = $("runners").children;
+    for (var i = 0; i < cards.length; i++) cards[i].classList.toggle("shown", i < revealed);
+    $("answerRow").hidden = revealed < r.steps.length;
+
+    var main = $("mainBtn");
+    main.classList.toggle("stop", phase === "running");
+    main.textContent = phase === "ready" ? "Start" : phase === "running" ? "Stop" : round === lesson.rounds.length - 1 ? "Last round done" : "Next round";
+    main.disabled = phase === "stopped" && round === lesson.rounds.length - 1;
+
+    var rb = $("revealBtn");
+    rb.disabled = phase === "ready" || revealed >= r.steps.length;
+    rb.textContent = revealed >= r.steps.length ? "All steps shown" : "Show step " + (revealed + 1);
+
+    $("prevBtn").disabled = round === 0;
+    $("nextBtn").disabled = round === lesson.rounds.length - 1;
+    $("clock").classList.toggle("running", phase === "running");
+    $("clock").textContent = fmt(elapsed);
+  }
+
+  function renderTimes() {
+    var best = null;
+    Object.keys(times).forEach(function (k) {
+      if (best === null || times[k] < times[best]) best = k;
+    });
+    $("times").innerHTML = lesson.rounds.map(function (_, i) {
+      var has = times[i] != null;
+      var cls = (i === round ? "current " : "") + (String(i) === best ? "best" : "");
+      return '<li class="' + cls + '"><span>Round ' + (i + 1) + "</span>" +
+        '<span class="t' + (has ? "" : " none") + '">' + (has ? fmt(times[i]) + (String(i) === best ? " ★" : "") : "–") + "</span></li>";
+    }).join("");
+    var cur = $("times").querySelector(".current");
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+  }
+
+  // ---------- actions ----------
+  function stopTicker() { if (ticker) { clearInterval(ticker); ticker = null; } }
+
+  function start() {
+    phase = "running";
+    startedAt = performance.now();
+    elapsed = 0;
+    stopTicker();
+    ticker = setInterval(function () {
+      elapsed = performance.now() - startedAt;
+      $("clock").textContent = fmt(elapsed);
+    }, 50);
+    renderState();
+  }
+
+  function stop() {
+    elapsed = performance.now() - startedAt;
+    stopTicker();
+    phase = "stopped";
+    times[round] = elapsed;
+    saveTimes();
+    renderState();
+    renderTimes();
+  }
+
+  function goTo(i) {
+    if (i < 0 || i >= lesson.rounds.length) return;
+    stopTicker();
+    round = i;
+    phase = "ready";
+    revealed = 0;
+    elapsed = 0;
+    renderRound();
+  }
+
+  function mainAction() {
+    if (phase === "ready") start();
+    else if (phase === "running") stop();
+    else goTo(round + 1);
+  }
+
+  function reveal() {
+    if (phase === "ready") return;
+    if (revealed < lesson.rounds[round].steps.length) { revealed++; renderState(); }
+  }
+
+  function redo() {
+    stopTicker();
+    phase = "ready";
+    revealed = 0;
+    elapsed = 0;
+    renderState();
+  }
+
+  // ---------- lesson picker ----------
+  function openLesson(l) {
+    lesson = l;
+    loadTimes();
+    $("picker").hidden = true;
+    $("app").hidden = false;
+    $("homeBtn").hidden = lessons.length < 2;
+    document.title = "Relay Race " + l.lesson + " – " + l.title;
+    goTo(0);
+  }
+
+  function showPicker() {
+    stopTicker();
+    lesson = null;
+    $("app").hidden = true;
+    $("picker").hidden = false;
+    $("lessonList").innerHTML = "";
+    lessons.forEach(function (l) {
+      var b = document.createElement("button");
+      b.innerHTML = "Grade " + esc(l.grade) + " · Lesson " + esc(l.lesson) +
+        "<small>" + esc(l.title) + " · " + l.rounds.length + " rounds</small>";
+      b.onclick = function () { openLesson(l); };
+      $("lessonList").appendChild(b);
+    });
+    if (!lessons.length) $("lessonList").textContent = "No lessons found.";
+  }
+
+  // ---------- wiring ----------
+  $("mainBtn").onclick = mainAction;
+  $("revealBtn").onclick = reveal;
+  $("resetBtn").onclick = redo;
+  $("prevBtn").onclick = function () { goTo(round - 1); };
+  $("nextBtn").onclick = function () { goTo(round + 1); };
+  $("homeBtn").onclick = showPicker;
+  $("clearBtn").onclick = function () {
+    if (confirm("Clear all round times for this lesson?")) { times = {}; saveTimes(); renderTimes(); }
+  };
+  $("fullBtn").onclick = function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  };
+
+  document.addEventListener("keydown", function (e) {
+    if (!lesson || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === "Space") { e.preventDefault(); mainAction(); }
+    else if (e.key === "s" || e.key === "S") reveal();
+    else if (e.key === "ArrowRight") goTo(round + 1);
+    else if (e.key === "ArrowLeft") goTo(round - 1);
+  });
+  // Keep Space from also "clicking" whichever button was touched last.
+  document.addEventListener("keyup", function (e) { if (e.code === "Space") e.preventDefault(); });
+
+  var wanted = new URLSearchParams(location.search).get("lesson");
+  var match = lessons.filter(function (l) { return l.id === wanted; })[0];
+  if (match) openLesson(match);
+  else if (lessons.length === 1) openLesson(lessons[0]);
+  else showPicker();
+})();
