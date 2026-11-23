@@ -58,7 +58,7 @@
     $("runners").innerHTML = r.steps.map(function (st, i) {
       return '<div class="runner"><div class="runner-num">Runner ' + (i + 1) + "</div>" +
         '<div class="runner-job">' + esc(st.job) + "</div>" +
-        '<div class="work">' + math(st.work) + "</div></div>";
+        '<div class="work"><span>' + math(st.work) + "</span></div></div>";
     }).join("");
     $("answer").innerHTML = math(r.answer);
 
