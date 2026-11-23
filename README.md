@@ -24,7 +24,9 @@ Keyboard: space = start / stop / next, S = show next step, arrow keys = change r
 | --- | --- |
 | Grade 6, 3-5 Evaluate Algebraic Expressions | `lessons/g6-3-5.js` |
 
-To add a lesson, copy a file in `lessons/`, change the content, and add one `<script src="lessons/your-file.js"></script>` line near the bottom of `index.html`. With more than one lesson the site opens on a lesson picker. A link ending in `?lesson=g6-3-5` opens that lesson directly.
+The site opens on the teacher page, which lists every relay race by grade with a link to each. A link ending in `?lesson=g6-3-5` opens that race directly, and **All relay races** in the top corner of a race returns to the list.
+
+To add a lesson, copy a file in `lessons/`, change the content, and add one `<script src="lessons/your-file.js"></script>` line near the bottom of `index.html`. It appears on the teacher page automatically.
 
 ## Publishing with GitHub Pages
 

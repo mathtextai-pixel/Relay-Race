@@ -181,26 +181,65 @@
     loadTimes();
     $("picker").hidden = true;
     $("app").hidden = false;
-    $("homeBtn").hidden = lessons.length < 2;
     document.title = "Relay Race " + l.lesson + " – " + l.title;
     goTo(0);
   }
 
+  // The teacher page: every relay race, grouped by grade, each a real link.
   function showPicker() {
     stopTicker();
     lesson = null;
+    document.title = "Relay Races";
     $("app").hidden = true;
     $("picker").hidden = false;
-    $("lessonList").innerHTML = "";
-    lessons.forEach(function (l) {
-      var b = document.createElement("button");
-      b.innerHTML = "Grade " + esc(l.grade) + " · Lesson " + esc(l.lesson) +
-        "<small>" + esc(l.title) + " · " + l.rounds.length + " rounds</small>";
-      b.onclick = function () { openLesson(l); };
-      $("lessonList").appendChild(b);
+    var list = $("lessonList");
+    list.innerHTML = "";
+    if (!lessons.length) { list.textContent = "No relay races yet."; return; }
+
+    var sorted = lessons.slice().sort(function (a, b) {
+      return a.grade - b.grade || String(a.lesson).localeCompare(String(b.lesson), undefined, { numeric: true });
     });
-    if (!lessons.length) $("lessonList").textContent = "No lessons found.";
+    var lastGrade = null;
+    sorted.forEach(function (l) {
+      if (l.grade !== lastGrade) {
+        var h = document.createElement("h2");
+        h.textContent = "Grade " + l.grade;
+        list.appendChild(h);
+        lastGrade = l.grade;
+      }
+      var n = (l.examples || []).length;
+      var a = document.createElement("a");
+      a.className = "lesson-link";
+      a.href = "?lesson=" + encodeURIComponent(l.id);
+      a.innerHTML = '<span class="lesson-num">' + esc(l.lesson) + "</span>" +
+        '<span class="lesson-text">' + esc(l.title) +
+        "<small>" + (n ? n + (n === 1 ? " example, " : " examples, ") : "") + l.rounds.length + " rounds</small></span>" +
+        '<span class="lesson-go">Open</span>';
+      a.onclick = function (e) {
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;   // let "open in new tab" work
+        e.preventDefault();
+        navigate(a.getAttribute("href"));
+      };
+      list.appendChild(a);
+    });
   }
+
+  function route() {
+    var wanted = new URLSearchParams(location.search).get("lesson");
+    var match = lessons.filter(function (l) { return l.id === wanted; })[0];
+    if (match) openLesson(match); else showPicker();
+  }
+
+  // Change the address without reloading; where that is not allowed, just switch views.
+  function navigate(url) {
+    try { history.pushState(null, "", url); route(); }
+    catch (e) {
+      var id = new URLSearchParams(url.split("?")[1] || "").get("lesson");
+      var match = lessons.filter(function (l) { return l.id === id; })[0];
+      if (match) openLesson(match); else showPicker();
+    }
+  }
+  window.addEventListener("popstate", route);
 
   // ---------- wiring ----------
   $("mainBtn").onclick = mainAction;
@@ -208,7 +247,7 @@
   $("resetBtn").onclick = redo;
   $("prevBtn").onclick = function () { goTo(round - 1); };
   $("nextBtn").onclick = function () { goTo(round + 1); };
-  $("homeBtn").onclick = showPicker;
+  $("homeBtn").onclick = function () { navigate(location.pathname); };
   // Two taps to clear, so a stray touch on the board cannot wipe the times.
   var clearArmed = null;
   $("clearBtn").onclick = function () {
@@ -239,9 +278,5 @@
   // Keep Space from also "clicking" whichever button was touched last.
   document.addEventListener("keyup", function (e) { if (e.code === "Space") e.preventDefault(); });
 
-  var wanted = new URLSearchParams(location.search).get("lesson");
-  var match = lessons.filter(function (l) { return l.id === wanted; })[0];
-  if (match) openLesson(match);
-  else if (lessons.length === 1) openLesson(lessons[0]);
-  else showPicker();
+  route();
 })();
