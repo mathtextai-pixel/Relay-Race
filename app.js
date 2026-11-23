@@ -195,12 +195,24 @@
   $("prevBtn").onclick = function () { goTo(round - 1); };
   $("nextBtn").onclick = function () { goTo(round + 1); };
   $("homeBtn").onclick = showPicker;
+  // Two taps to clear, so a stray touch on the board cannot wipe the times.
+  var clearArmed = null;
   $("clearBtn").onclick = function () {
-    if (confirm("Clear all round times for this lesson?")) { times = {}; saveTimes(); renderTimes(); }
+    var btn = $("clearBtn");
+    if (clearArmed) {
+      clearTimeout(clearArmed); clearArmed = null;
+      btn.textContent = "Clear";
+      times = {}; saveTimes(); renderTimes();
+    } else {
+      btn.textContent = "Tap again to clear";
+      clearArmed = setTimeout(function () { clearArmed = null; btn.textContent = "Clear"; }, 3000);
+    }
   };
   $("fullBtn").onclick = function () {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    try {
+      var p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) { /* full screen not available here */ }
   };
 
   document.addEventListener("keydown", function (e) {
